@@ -97,6 +97,10 @@
                                 <a type="button" href="{$KeycloakUrl}" class="btn btn-outline-primary">{translate key='SignInWith'}<span class="fw-medium">
                                         Keycloak</span></a>
                             {/if}
+                            {if $AllowNextcloudLogin}
+                                <a type="button" href="{$NextcloudUrl}" class="btn btn-outline-primary"><i class="bi bi-cloud-arrow-up-fill me-1"></i>{translate key='SignInWith'}<span class="fw-medium">
+                                        Nextcloud</span></a>
+                            {/if}
                         </section>
                         {if $facebookError}
                             <p class="text-center my-3">
