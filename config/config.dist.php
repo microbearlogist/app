@@ -251,6 +251,14 @@ $conf['settings']['authentication']['keycloak.client.id'] = '';
 $conf['settings']['authentication']['keycloak.client.secret'] = '';
 $conf['settings']['authentication']['keycloak.client.uri'] = '/Web/keycloak-auth.php';
 /**
+ * Nextcloud login configuration
+ */
+$conf['settings']['authentication']['nextcloud.url'] = '';
+$conf['settings']['authentication']['nextcloud.scope'] = 'openid,profile,email,roles,groups';
+$conf['settings']['authentication']['nextcloud.client.id'] = '';
+$conf['settings']['authentication']['nextcloud.client.secret'] = '';
+$conf['settings']['authentication']['nextcloud.client.uri'] = '/Web/nextcloud-auth.php';
+/**
  * Delete old data job configuration
  * Activate the deleteolddata.php as a background job to use this feature
  */
