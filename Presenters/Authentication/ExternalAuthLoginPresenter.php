@@ -38,6 +38,9 @@ class ExternalAuthLoginPresenter
         if ($this->page->GetType() == 'keycloak') {
             $this->ProcessKeycloakSingleSignOn();
         }
+         if ($this->page->GetType() == 'nextcloud') {
+            $this->ProcessNextcloudSingleSignOn();
+        }
     }
 
     /**
@@ -219,6 +222,89 @@ class ExternalAuthLoginPresenter
         $phone  = isset($userData['phone_number']) ? $userData['phone_number'] : '';
         $organization  = isset($userData['organization']) ? $userData['organization'] : '';
         $title  = isset($userData['title']) ? $userData['title'] : '';
+
+        if (empty($email)) {
+            $this->page->ShowError(["Email is not set in your Keycloak profile. Please update your profile and try again."]);
+            return;
+        }
+
+        $this->processUserData($username, $email, $firstName, $lastName, $phone, $organization, $title);
+    }
+
+     private function ProcessNextcloudSingleSignOn()
+    {
+        $code = $_GET['code'];
+
+        $nextcloudUrl  = Configuration::Instance()->GetSectionKey(ConfigSection::AUTHENTICATION, ConfigKeys::NEXTCLOUD_URL);
+        $clientId     = Configuration::Instance()->GetSectionKey(ConfigSection::AUTHENTICATION, ConfigKeys::NEXTCLOUD_CLIENT_ID);
+        $clientSecret = Configuration::Instance()->GetSectionKey(ConfigSection::AUTHENTICATION, ConfigKeys::NEXTCLOUD_CLIENT_SECRET);
+        $redirectUri = rtrim(Configuration::Instance()->GetScriptUrl(), 'Web/') . Configuration::Instance()->GetSectionKey(ConfigSection::AUTHENTICATION, ConfigKeys::NEXTCLOUD_REDIRECT_URI);
+
+        $tokenEndpoint = rtrim($keycloakUrl, '/') . '/realms/' . urlencode($realm) . '/protocol/openid-connect/token';
+
+        // Prepare the POST data for the token request.
+        $postData = [
+            'grant_type'    => 'authorization_code',
+            'code'          => $code,
+            'redirect_uri'  => $redirectUri,
+            'client_id'     => $clientId,
+            'client_secret' => $clientSecret,
+        ];
+
+        $client = new \GuzzleHttp\Client();
+
+        try {
+            $response = $client->post($tokenEndpoint, [
+                'form_params' => $postData,
+            ]);
+        } catch (\Exception $e) {
+            $this->page->ShowError(['Error retrieving Nextcloud token: ' . $e->getMessage()]);
+            return;
+        }
+
+        $tokenData = json_decode($response->getBody(), true);
+        if (!isset($tokenData['access_token'])) {
+            $this->page->ShowError(['Access token not found in Keycloak response']);
+            return;
+        }
+        $accessToken = $tokenData['access_token'];
+
+        // Build the userinfo endpoint URL (again, without '/auth').
+        $userInfoEndpoint = rtrim($NextcloudUrl, '/') . '/realms/' . urlencode($realm) . '/protocol/openid-connect/userinfo';
+
+        try {
+            $userResponse = $client->get($userInfoEndpoint, [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $accessToken,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            $this->page->ShowError(['Error retrieving Nexcloud user info: ' . $e->getMessage()]);
+            return;
+        }
+
+        $userData = json_decode($userResponse->getBody(), true);
+
+        $email     = isset($userData['email']) ? $userData['email'] : '';
+        $firstName = isset($userData['given_name']) ? $userData['given_name'] : 'not set';
+        $lastName  = isset($userData['family_name']) ? $userData['family_name'] : 'not set';
+        $username  = isset($userData['preferred_username']) ? $userData['preferred_username'] : $email;
+        $phone  = isset($userData['phone_number']) ? $userData['phone_number'] : '';
+        $organization  = isset($userData['organization']) ? $userData['organization'] : '';
+        $title  = isset($userData['title']) ? $userData['title'] : '';
+
+        $this->provider->setHttpClient($client);
+        $token = $this->provider->getAccessToken('authorization_code', ['code' => 'mock_authorization_code']);
+        $user = $this->provider->getResourceOwner($token);
+        $this->assertEquals($response_data['ocs']['data']['id'], $user->getId());
+        $this->assertEquals($response_data['ocs']['data']['id'], $user->toArray()['id']);
+        $this->assertEquals($response_data['ocs']['data']['email'], $user->getEmail());
+        $this->assertEquals($response_data['ocs']['data']['email'], $user->toArray()['email']);
+        $this->assertEquals($response_data['ocs']['data']['display-name'], $user->getName());
+        $this->assertEquals($response_data['ocs']['data']['display-name'], $user->toArray()['display-name']);
+        $this->assertEquals($response_data['ocs']['data']['groups'], $user->getGroups());
+        $this->assertEquals($response_data['ocs']['data']['groups'], $user->toArray()['groups']);
+        
 
         if (empty($email)) {
             $this->page->ShowError(["Email is not set in your Keycloak profile. Please update your profile and try again."]);
