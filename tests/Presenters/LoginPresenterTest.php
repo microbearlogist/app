@@ -231,6 +231,8 @@ class FakeLoginPage extends FakePageBase implements ILoginPage
 
     public function SetKeycloakUrl($URL) {}
 
+    public function SetNextcloudUrl($URL) {}
+
     public function PageLoad()
     {
         $this->_PageLoadWasCalled = true;
