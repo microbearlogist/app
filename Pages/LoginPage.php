@@ -112,6 +112,11 @@ interface ILoginPage extends IPage, ILoginBasePage
      *
      */
     public function SetKeycloakUrl($URL);
+
+    /**
+     *
+     */
+    public function SetNextcloudUrl($URL);
 }
 
 class LoginPage extends Page implements ILoginPage
@@ -351,6 +356,13 @@ class LoginPage extends Page implements ILoginPage
     {
         if (Configuration::Instance()->GetSectionKey(ConfigSection::AUTHENTICATION, ConfigKeys::AUTHENTICATION_ALLOW_KEYCLOAK, new BooleanConverter())) {
             $this->Set('KeycloakUrl', $KeycloakUrl);
+        }
+    }
+
+    public function SetNextcloudUrl($NextcloudUrl)
+    {
+        if (Configuration::Instance()->GetSectionKey(ConfigSection::AUTHENTICATION, ConfigKeys::AUTHENTICATION_ALLOW_NEXTCLOUD, new BooleanConverter())) {
+            $this->Set('NextcloudUrl', $NextcloudUrl);
         }
     }
 }
