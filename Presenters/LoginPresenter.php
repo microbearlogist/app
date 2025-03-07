@@ -318,4 +318,24 @@ class LoginPresenter
             return $keycloakUrl;
         }
     }
+
+    public function GetNexcloudUrl()
+    {
+        if (Configuration::Instance()->GetSectionKey(ConfigSection::AUTHENTICATION, ConfigKeys::AUTHENTICATION_ALLOW_NEXTCLOUD, new BooleanConverter())) {
+            // Retrieve Keycloak configuration values
+            $baseUrl     = Configuration::Instance()->GetSectionKey(ConfigSection::AUTHENTICATION, ConfigKeys::NEXTCLOUD_URL);
+            $clientId    = Configuration::Instance()->GetSectionKey(ConfigSection::AUTHENTICATION, ConfigKeys::NEXTCLOUD_CLIENT_ID);
+            $redirectUri = rtrim(Configuration::Instance()->GetScriptUrl(), 'Web/') . Configuration::Instance()->GetSectionKey(ConfigSection::AUTHENTICATION, ConfigKeys::NEXTCLOUD_REDIRECT_URI);
+
+            // Construct the Keycloak authentication URL
+            $NextcloudUrl = rtrim($baseUrl, '/')
+                . '/index.php/apps/oauth2/authorize?'
+                . 'client_id=' . urlencode($clientId)
+                . '&redirect_uri=' . urlencode($redirectUri)
+                . '&response_type=code'
+                . '&scope=' . urlencode('openid email profile');
+
+            return $keycloakUrl;
+        }
+    }
 }
